@@ -1,6 +1,8 @@
 <!-- frontend/index.html -->
 <!DOCTYPE html>
 <html>
+<script src="grid.js">
+</script>
 <head>
   <title>AI Crossword Maker</title>
   <style>
@@ -13,26 +15,9 @@
   <input id="theme" placeholder="Enter theme (e.g. summer)">
   <button onclick="generate()">Generate</button>
   <table id="grid"></table>
+  <p id="words"></p>
 
-  <script>
-    async function generate() {
-      const theme = document.getElementById('theme').value;
-      const res = await fetch(`http://127.0.0.1:8000/generate?theme=${theme}`);
-      const data = await res.json();
 
-      const table = document.getElementById('grid');
-      table.innerHTML = '';
-      data.grid.forEach(row => {
-        const tr = document.createElement('tr');
-        row.forEach(cell => {
-          const td = document.createElement('td');
-          td.textContent = cell === ' ' ? '' : cell;
-          tr.appendChild(td);
-        });
-        table.appendChild(tr);
-      });
-    }
-  </script>
 </body>
 </html>
 
