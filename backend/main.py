@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from crossword_generator import create_crossword, grid_to_display
+from crossword_generator_new import create_crossword, grid_to_display
 from ai_word_generator import get_words_by_theme
 from pydantic import BaseModel
 from typing import List, Optional
@@ -34,11 +34,12 @@ async def generate(req: GenerateRequest):
             raise HTTPException(status_code=500, detail=f"AI word generation failed: {e}")
     else:
         # default seed words
-        words = ["cat", "dog", "turtle", "bird"]
-        clues = ["Likes milk","Likes bones","Very slow", "Can fly"]
-
-    # Normalize
-    # words = [w.strip() for w in words if w and len(w.strip()) > 1]
+        words = ["ZON", "STRAND", "VAKANTIE"]
+        clues = {
+            "ZON" : {"word":"ZON","clue":"De ster in ons zonnestelsel."},
+            "STRAND" : {"word":"STRAND","clue":"Plaats waar je zand en zee vindt."},
+            "VAKANTIE" : {"word":"VAKANTIE","clue":"Tijd om te ontspannen en te reizen."}
+        }
 
     grid_size = max(9, min(25, req.grid_size or 15))
     grid, placed_words = create_crossword(words, clues, grid_size=grid_size)

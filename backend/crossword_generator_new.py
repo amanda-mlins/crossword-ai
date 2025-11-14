@@ -1,136 +1,168 @@
 import random
-from typing import List, Tuple, Dict
 
-class Crossword:
-    def __init__(self, size: int = 15):
+class CrosswordSolver:
+    """
+    Crossword solver using a heuristic approach:
+    - Places longest words first
+    - First word in the center
+    - Uses letter-to-position map for intersections
+    - Scores candidate positions based on intersections
+    """
+
+    def __init__(self, words, clues, size=15):
+        """
+        Initialize the crossword solver.
+
+        Args:
+            words (list[str]): List of words to place
+            clues (dict): Dictionary of clues (used for later reference)
+            size (int): Size of the grid (size x size)
+        """
+        self.words = [w.upper() for w in words]
+        self.clues = clues
         self.size = size
         self.grid = [[' ' for _ in range(size)] for _ in range(size)]
-        self.placed_words = []
+        self.placed = []  # Stores tuples (word, row, col, direction)
+        self.letter_positions = {}  # Map letters to grid positions for fast intersection lookup
 
-    def create_crossword(self, words: List[str]) -> Tuple[List[List[str]], List[Dict]]:
-        words = [w.upper() for w in sorted(words, key=lambda x: -len(x))]  # longest first
-
-        # Place first word in the center
-        first_word = words[0]
-        start_row = self.size // 2
-        start_col = (self.size - len(first_word)) // 2
-        self._place_word(first_word, start_row, start_col, "H")
-        self.placed_words.append({"word": first_word, "row": start_row, "col": start_col, "dir": "H"})
-
-        open_slots = self._get_open_slots(first_word, start_row, start_col, "H")
-
-        for word in words[1:]:
-            candidates = self._find_candidates(word, open_slots)
-            if candidates:
-                # Pick the candidate with maximum overlap
-                candidates.sort(key=lambda x: -x["overlaps"])
-                best = candidates[0]
-                self._place_word(word, best["row"], best["col"], best["dir"])
-                self.placed_words.append({"word": word, "row": best["row"], "col": best["col"], "dir": best["dir"]})
-                open_slots = self._update_open_slots(open_slots, word, best)
-            else:
-                # Fallback: place randomly near center
-                placed = False
-                for _ in range(50):
-                    direction = random.choice(["H", "V"])
-                    row = random.randint(0, self.size - (len(word) if direction == "V" else 1))
-                    col = random.randint(0, self.size - (len(word) if direction == "H" else 1))
-                    if self._can_place(word, row, col, direction):
-                        self._place_word(word, row, col, direction)
-                        self.placed_words.append({"word": word, "row": row, "col": col, "dir": direction})
-                        open_slots = self._update_open_slots(open_slots, word,
-                                                             {"row": row, "col": col, "dir": direction})
-                        placed = True
-                        break
-                if not placed:
-                    print(f"Could not place word: {word}")
-
-        return self.grid, self.placed_words
-
-    # -------------------------- Core Logic --------------------------
-    def _get_open_slots(self, word, row, col, direction):
-        slots = []
-        for i, ch in enumerate(word):
-            r = row + (i if direction == "V" else 0)
-            c = col + (i if direction == "H" else 0)
-            slots.append({"row": r, "col": c, "char": ch})
-        return slots
-
-    def _update_open_slots(self, open_slots, word, placement):
-        new_slots = self._get_open_slots(word, placement["row"], placement["col"], placement["dir"])
-        # Avoid duplicates
-        for slot in new_slots:
-            if slot not in open_slots:
-                open_slots.append(slot)
-        return open_slots
-
-    def _find_candidates(self, word, open_slots):
-        candidates = []
-        for i, ch1 in enumerate(word):
-            for slot in open_slots:
-                if ch1 == slot["char"]:
-                    # Determine placement
-                    if slot.get("dir") == "H":  # existing horizontal → new vertical
-                        row = slot["row"] - i
-                        col = slot["col"]
-                        direction = "V"
-                    else:  # default: vertical or unknown → horizontal
-                        row = slot["row"]
-                        col = slot["col"] - i
-                        direction = "H"
-
-                    if self._can_place(word, row, col, direction):
-                        overlaps = self._count_overlaps(word, row, col, direction)
-                        candidates.append({"row": row, "col": col, "dir": direction, "overlaps": overlaps})
-        return candidates
+        # Sort words longest first for better placement
+        self.words.sort(key=len, reverse=True)
 
     def _can_place(self, word, row, col, direction):
-        for i, ch in enumerate(word):
-            r = row + (i if direction == "V" else 0)
-            c = col + (i if direction == "H" else 0)
+        """
+        Check if a word can be placed at a given position.
 
+        Args:
+            word (str): Word to place
+            row (int): Starting row
+            col (int): Starting column
+            direction (str): 'H' for horizontal, 'V' for vertical
+
+        Returns:
+            bool: True if placement is valid
+        """
+        for i, ch in enumerate(word):
+            r = row + (i if direction == 'V' else 0)
+            c = col + (i if direction == 'H' else 0)
             if not (0 <= r < self.size and 0 <= c < self.size):
                 return False
-
-            cell = self.grid[r][c]
-            if cell != ' ' and cell != ch:
+            cur = self.grid[r][c]
+            if cur != ' ' and cur != ch:
                 return False
-
-            # adjacency check (side neighbors)
-            for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-                rr, cc = r+dr, c+dc
-                if 0 <= rr < self.size and 0 <= cc < self.size:
-                    neighbor = self.grid[rr][cc]
-                    if neighbor != ' ' and neighbor != ch:
-                        return False
         return True
 
     def _place_word(self, word, row, col, direction):
+        """
+        Place a word on the grid and update the letter positions map.
+
+        Args:
+            word (str): Word to place
+            row (int): Starting row
+            col (int): Starting column
+            direction (str): 'H' or 'V'
+        """
         for i, ch in enumerate(word):
-            r = row + (i if direction == "V" else 0)
-            c = col + (i if direction == "H" else 0)
+            r = row + (i if direction == 'V' else 0)
+            c = col + (i if direction == 'H' else 0)
             self.grid[r][c] = ch
+            self.letter_positions.setdefault(ch, []).append((r, c))
+        self.placed.append((word, row, col, direction))
 
-    def _count_overlaps(self, word, row, col, direction):
-        count = 0
+    def _score_position(self, word, row, col, direction):
+        """
+        Compute score for a candidate placement based on intersections.
+
+        Args:
+            word (str): Word to score
+            row (int): Starting row
+            col (int): Starting column
+            direction (str): 'H' or 'V'
+
+        Returns:
+            int: Number of intersecting letters
+        """
+        score = 0
         for i, ch in enumerate(word):
-            r = row + (i if direction == "V" else 0)
-            c = col + (i if direction == "H" else 0)
-            if 0 <= r < self.size and 0 <= c < self.size and self.grid[r][c] == ch:
-                count += 1
-        return count
+            r = row + (i if direction == 'V' else 0)
+            c = col + (i if direction == 'H' else 0)
+            if self.grid[r][c] == ch:
+                score += 1
+        return score
 
-# -------------------- External Interface --------------------
-def create_crossword(words: List[str], grid_size: int = 15):
-    solver = Crossword(grid_size)
-    return solver.create_crossword(words)
+    def solve(self):
+        """
+        Solve the crossword by placing all words.
+
+        Returns:
+            grid (list[list[str]]): Completed grid
+            placed (list[tuple]): List of placed words with positions and directions
+        """
+        if not self.words:
+            return self.grid, self.placed
+
+        # Place the first word in the center horizontally
+        first_word = self.words[0]
+        start_row = self.size // 2
+        start_col = (self.size - len(first_word)) // 2
+        self._place_word(first_word, start_row, start_col, "H")
+
+        # Place remaining words
+        for word in self.words[1:]:
+            candidates = []
+
+            # Find potential intersections based on letters
+            for i, ch in enumerate(word):
+                for r, c in self.letter_positions.get(ch, []):
+                    for direction in ['H', 'V']:
+                        row = r - i if direction == 'V' else r
+                        col = c - i if direction == 'H' else c
+                        if self._can_place(word, row, col, direction):
+                            score = self._score_position(word, row, col, direction)
+                            candidates.append((score, row, col, direction))
+
+            # Sort by score descending (max intersections first)
+            candidates.sort(key=lambda x: x[0], reverse=True)
+
+            placed = False
+            for score, row, col, direction in candidates[:5]:  # try top 5
+                self._place_word(word, row, col, direction)
+                placed = True
+                break
+
+            # Fallback random placement if no intersections found
+            if not placed:
+                for _ in range(50):
+                    direction = random.choice(['H', 'V'])
+                    row = random.randint(0, self.size - (len(word) if direction == 'V' else 1))
+                    col = random.randint(0, self.size - (len(word) if direction == 'H' else 1))
+                    if self._can_place(word, row, col, direction):
+                        self._place_word(word, row, col, direction)
+                        break
+
+        return self.grid, self.placed
+
+
+def create_crossword(words, clues, grid_size=15):
+    """
+    Helper function to generate a crossword grid and positions.
+
+    Args:
+        words (list[str]): List of words
+        clues (dict): Dictionary of clues
+        grid_size (int): Grid size
+
+    Returns:
+        grid (list[list[str]]), positions (list[tuple])
+    """
+    solver = CrosswordSolver(words, clues, size=grid_size)
+    grid, positions = solver.solve()
+    return grid, positions
+
 
 def grid_to_display(grid):
-    return [[cell if cell != ' ' else '' for cell in row] for row in grid]
+    """
+    Convert internal grid to display-friendly format.
 
-# -------------------- Test --------------------
-if __name__ == "__main__":
-    words = ["cat", "back", "stack", "attack", "track", "dog", "fish", "rat"]
-    grid, positions = create_crossword(words, grid_size=15)
-    for row in grid:
-        print(' '.join(cell if cell != ' ' else '.' for cell in row))
+    Empty spaces become ''.
+    """
+    return [[cell if cell != ' ' else '' for cell in row] for row in grid]
