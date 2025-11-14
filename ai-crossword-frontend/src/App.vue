@@ -5,10 +5,11 @@
     </h1>
     <WordInput @generated="handleResult" />
     <div class="flex justify-center mt-6">
-      <CrosswordGrid v-if="grid" :grid="grid" />
+      <CrosswordGrid v-if="grid" :grid="grid" :clues="clues" :highlightedClueKey="highlightedClueKey"/>
     </div>
     <div class="flex justify-center mt-6">
-      <ClueGrid v-if="clues" :clues="clues" />
+      <ClueGrid v-if="clues" :clues="clues" @hoverClue="highlightedClueKey = $event"
+                                                @leaveClue="highlightedClueKey = null" />
     </div>
   </div>
 </template>
@@ -21,6 +22,7 @@ import ClueGrid from "./components/ClueGrid.vue";
 
 const grid = ref(null);
 const clues = ref(null);
+const highlightedClueKey = ref(null);
 
 function gridState(item, index) {
   console.log(item + "," + index)
