@@ -1,9 +1,9 @@
-import itertools
-import random
+import itertools,random
 
 class CrosswordSolver:
-    def __init__(self, words, size=15):
+    def __init__(self, words, clues, size=15):
         self.words = [w.upper() for w in words]
+        self.clues = clues
         self.size = size
         self.grid = [[' ' for _ in range(size)] for _ in range(size)]
         self.best_grid = None
@@ -134,8 +134,8 @@ class CrosswordSolver:
                     self._remove(word, row, col, d)
                     break
 
-def create_crossword(words, grid_size=15):
-    solver = CrosswordSolver(words, size=grid_size)
+def create_crossword(words, clues, grid_size=15):
+    solver = CrosswordSolver(words, clues, size=grid_size)
     grid, positions, score = solver.solve()
     return grid, positions
 
