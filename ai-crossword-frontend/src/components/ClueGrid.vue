@@ -2,7 +2,7 @@
   <div v-if="clues" class="inline-block border border-gray-400">
     <table class="border-collapse">
       <tbody>
-        <tr v-for="(item, key) in clues" @mouseenter="$emit('hoverClue', key)" @mouseleave="$emit('leaveClue')" class="hover:bg-gray-100 cursor-pointer">
+        <tr v-for="(item, key) in clues" @mouseenter="$emit('hoverClue', key)" @mouseleave="$emit('leaveClue')" @click="$emit('revealClue', key)" class="hover:bg-gray-100 cursor-pointer">
             <td> {{ item.position}} -> ({{ item.start + 1 }}, {{ item.end + 1}})</td>
             <td> {{ item.clue }} </td>
         </tr>

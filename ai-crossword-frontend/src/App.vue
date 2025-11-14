@@ -5,11 +5,11 @@
     </h1>
     <WordInput @generated="handleResult" />
     <div class="flex justify-center mt-6">
-      <CrosswordGrid v-if="grid" :grid="grid" :clues="clues" :highlightedClueKey="highlightedClueKey"/>
+      <CrosswordGrid v-if="grid" :grid="grid" :clues="clues" :highlightedClueKey="highlightedClueKey" :revealedClues="revealedClues" />
     </div>
     <div class="flex justify-center mt-6">
       <ClueGrid v-if="clues" :clues="clues" @hoverClue="highlightedClueKey = $event"
-                                                @leaveClue="highlightedClueKey = null" />
+                                                @leaveClue="highlightedClueKey = null" @revealClue="revealClue"  />
     </div>
   </div>
 </template>
@@ -23,6 +23,15 @@ import ClueGrid from "./components/ClueGrid.vue";
 const grid = ref(null);
 const clues = ref(null);
 const highlightedClueKey = ref(null);
+const revealedClues = ref(new Set());
+
+function revealClue(key) {
+  if(!revealedClues.value.has(key)){
+    revealedClues.value.add(key);
+  } else {
+    revealedClues.value.delete(key);
+  }
+}
 
 function gridState(item, index) {
   console.log(item + "," + index)
@@ -34,13 +43,11 @@ function handleResult(result) {
   const original = result.grid.map(row =>
                                 row.map(str => ({
                                   value: str,
-                                  status: str === "" ? "empty" : "show"
+                                  status: str === "" ? "empty" : "hidden"
                                 })))
 
   grid.value = original
   clues.value = result.clues
-  console.log(result.placed_words)
-  console.log(result.clues)
-  console.log(grid.value)
+  revealedClues.value = new Set();
 }
 </script>

@@ -2,18 +2,10 @@
   <div class="p-4 bg-white rounded-xl shadow-md mb-4">
     <h2 class="text-lg font-semibold mb-2">Create a Crossword in Dutch</h2>
     <div class="mb-2">
-      <label class="block text-sm font-medium">Words (comma separated)</label>
-      <input
-        v-model="wordsInput"
-        placeholder="kat, hond, vogel, schilpad"
-        class="w-full border p-2 rounded"
-      />
-    </div>
-    <div class="mb-2">
-      <label class="block text-sm font-medium">Or Theme</label>
+      <label class="block text-sm font-medium">Give me a theme</label>
       <input
         v-model="theme"
-        placeholder="e.g., Zomer"
+        placeholder="e.g., Summer, vacations, Christmas"
         class="w-full border p-2 rounded"
       />
     </div>

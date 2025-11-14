@@ -29,7 +29,7 @@ async def generate(req: GenerateRequest):
         clues =  ["Clue for " + w for w in words]
     elif req.theme:
         try:
-            words, clues = get_words_by_theme(req.theme, num_words=12)
+            words, clues = get_words_by_theme(req.theme, num_words=10, test=0)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"AI word generation failed: {e}")
     else:

@@ -33,7 +33,7 @@
                           isHighlighted(r, c) ? 'outline outline-2 outline-blue-500' : ''
                         ]"
           >
-            {{ cell.value ? (cell.status == 'hidden' ? "?" : cell.value) : '' }}
+            {{ showLetter(r, c) }}
           </td>
         </tr>
       </tbody>
@@ -46,6 +46,7 @@
 const props = defineProps({
   grid: Array,
   highlightedClueKey: String,
+  revealedClues: Object, // a Set of revealed clue keys
   clues: Object
 });
 
@@ -74,6 +75,36 @@ function isHighlighted(r, c) {
 
 
   return false;
+}
+
+function showLetter(r, c) {
+  for (const [key, clue] of Object.entries(props.clues)) {
+    if (!props.revealedClues.has(key)) continue;
+
+    if (clue.position === "H") {
+      const row = clue.start;
+      const startCol = clue.end;
+      const endCol = clue.end + clue.word.length - 1;
+
+      if (r === row && c >= startCol && c <= endCol) {
+        // Calculate the letter index in the word
+        const index = c - startCol;
+        return clue.word[index];
+      }
+    } else {
+      const col = clue.end;
+      const startRow = clue.start;
+      const endRow = clue.start + clue.word.length - 1;
+      if (c === col && r >= startRow && r <= endRow) {
+        // Calculate the letter index in the word
+        const index = r - startRow;
+        return clue.word[index];
+      }
+    }
+  }
+
+  // Otherwise, show ? if cell has a value, else empty
+  return props.grid[r][c].value ? "?" : "";
 }
 </script>
 
